@@ -1,7 +1,7 @@
 var R = require('ramda');
 var assert = require('assert');
-var types = require('./types');
 var jsv = require('jsverify');
+var types = require('./types');
 
 var Maybe = require('..').Maybe;
 
@@ -27,7 +27,7 @@ var MaybeShrink = R.curry(function(a, m) {
 
 var MaybeArb = function(a) {
     return {
-        generator: jsv.generator.bless(MaybeGen(a)),
+        generator: MaybeGen(a),
         show: MaybeShow(a),
         shrink: jsv.shrink.bless(MaybeShrink(a))
     };
@@ -39,18 +39,11 @@ describe('Maybe', function() {
     var appF = 'Maybe (nat -> nat)';
     var appN = 'Maybe nat';
 
-    function mult(a) {
-        return function(b) { return a * b; };
-    }
-
-    function add(a) {
-        return function(b) { return a + b; };
-    }
-
     it('has an arbitrary', function() {
         var arb = jsv.forall(m, function(m) {
             return m instanceof Maybe;
         });
+
         jsv.assert(arb);
     });
 
