@@ -1,64 +1,80 @@
+var R = require('ramda');
 var assert = require('assert');
+var jsv = require('jsverify');
 var types = require('./types');
 
 var Identity = require('..').Identity;
 
+var IdentityGen = R.curry(function(a, n) {
+    return Identity(a.generator(n));
+});
+
+var IdentityShow = R.curry(function(a, i) {
+    return "Identity(" + a.show(i.get()) + ")";
+});
+
+var IdentityShrink = R.curry(function(a, i) {
+    return a.shrink(i.get()).map(Identity);
+});
+
+var IdentityArb = function(a) {
+    return {
+        generator: IdentityGen(a),
+        show: IdentityShow(a),
+        shrink: IdentityShrink(a)
+    }
+}
+
 describe('Identity', function() {
-    var m = Identity(1);
+    var i = IdentityArb(jsv.nat);
+    var env = {Identity: IdentityArb};
+    var appF = 'Identity (nat -> nat)';
+    var appN = 'Identity nat';
 
-    function mult(a) {
-        return function(b) { return a * b; };
-    }
+    it('has an arbitrary', function() {
+        var arb = jsv.forall(i, function(i) {
+            return i instanceof Identity;
+        });
 
-    function add(a) {
-        return function(b) { return a + b; };
-    }
-
+        jsv.assert(arb);
+    });
 
     it('is a Functor', function() {
         var fTest = types.functor;
-        assert.equal(true, fTest.iface(m));
-        assert.equal(true, fTest.id(m));
-        assert.equal(true, fTest.compose(m, mult(2), add(3)));
+
+        jsv.assert(jsv.forall(i, fTest.iface));
+        jsv.assert(jsv.forall(i, fTest.id));
+        jsv.assert(jsv.forall(i, 'nat -> nat', 'nat -> nat', fTest.compose));
     });
 
     it('is an Apply', function() {
         var aTest = types.apply;
-        var appA = Identity(mult(10));
-        var appU = Identity(add(7));
-        var appV = Identity(10);
 
-        assert.equal(true, aTest.iface(appA));
-        assert.equal(true, aTest.compose(appA, appU, appV));
+        jsv.assert(jsv.forall(i, aTest.iface));
+        jsv.assert(jsv.forall(appF, appF, appN, env, aTest.compose));
     });
 
     it('is an Applicative', function() {
         var aTest = types.applicative;
-        var app1 = Identity(101);
-        var app2 = Identity(-123);
-        var appF = Identity(mult(3));
 
-        assert.equal(true, aTest.iface(app1));
-        assert.equal(true, aTest.id(app1, app2));
-        assert.equal(true, aTest.homomorphic(app1, add(3), 46));
-        assert.equal(true, aTest.interchange(app2, appF, 17));
+        jsv.assert(jsv.forall(i, aTest.iface));
+        jsv.assert(jsv.forall(appN, appN, env, aTest.id));
+        jsv.assert(jsv.forall(appN, 'nat -> nat', 'nat', env, aTest.homomorphic));
+        jsv.assert(jsv.forall(appN, appF, 'nat', env, aTest.interchange));
     });
 
     it('is a Chain', function() {
         var cTest = types.chain;
-        var f1 = function(x) {return Identity(3 * x);};
-        var f2 = function(x) {return Identity(5 + x);};
-        var fNull = function() {return Identity(null);};
-        assert.equal(true, cTest.iface(m));
-        assert.equal(true, cTest.associative(m, f1, f2));
-        assert.equal(true, cTest.associative(m, fNull, f2));
-        assert.equal(true, cTest.associative(m, f1, fNull));
-        assert.equal(true, cTest.associative(m, fNull, fNull));
+        var f = 'nat -> Identity nat'
+
+        jsv.assert(jsv.forall(i, cTest.iface));
+        jsv.assert(jsv.forall(i, f, f, env, cTest.associative));
     });
 
     it('is a Monad', function() {
         var mTest = types.monad;
-        assert.equal(true, mTest.iface(m));
+
+        jsv.assert(jsv.forall(i, mTest.iface));
     });
 });
 
