@@ -15,6 +15,8 @@ function Either(left, right) {
 
 Either.prototype.map = util.returnThis;
 
+Either.prototype.ap = util.returnThis;
+
 Either.of = Either.prototype.of = function(value) {
     return Either.Right(value);
 };
@@ -62,8 +64,6 @@ function _Left(x) {
     this.value = x;
 }
 util.extend(_Left, Either);
-
-_Left.prototype.ap = function(that) { return that; };
 
 Either.Left = function(value) {
     return new _Left(value);
