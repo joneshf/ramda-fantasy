@@ -38,6 +38,7 @@ describe('Maybe', function() {
     var env = {Maybe: MaybeArb};
     var appF = 'Maybe (nat -> nat)';
     var appN = 'Maybe nat';
+    var f = 'nat -> Maybe nat';
 
     it('has an arbitrary', function() {
         var arb = jsv.forall(m, function(m) {
@@ -48,7 +49,7 @@ describe('Maybe', function() {
     });
 
     it('is a Functor', function() {
-        var fTest = types.functor;
+        var fTest = types.functor(R.eqDeep);
 
         jsv.assert(jsv.forall(m, fTest.iface));
         jsv.assert(jsv.forall(m, fTest.id));
@@ -56,14 +57,14 @@ describe('Maybe', function() {
     });
 
     it('is an Apply', function() {
-        var aTest = types.apply;
+        var aTest = types.apply(R.eqDeep);
 
         jsv.assert(jsv.forall(m, aTest.iface));
         jsv.assert(jsv.forall(appF, appF, appN, env, aTest.compose));
     });
 
     it('is an Applicative', function() {
-        var aTest = types.applicative;
+        var aTest = types.applicative(R.eqDeep);
 
         jsv.assert(jsv.forall(m, aTest.iface));
         jsv.assert(jsv.forall(appN, appN, env, aTest.id));
@@ -72,17 +73,18 @@ describe('Maybe', function() {
     });
 
     it('is a Chain', function() {
-        var cTest = types.chain;
-        var f = 'nat -> Maybe nat'
+        var cTest = types.chain(R.eqDeep);
 
         jsv.assert(jsv.forall(m, cTest.iface));
         jsv.assert(jsv.forall(m, f, f, env, cTest.associative));
     });
 
     it('is a Monad', function() {
-        var mTest = types.monad;
+        var mTest = types.monad(R.eqDeep);
 
         jsv.assert(jsv.forall(m, mTest.iface));
+        jsv.assert(jsv.forall(m, f, 'nat', env, mTest.leftId));
+        jsv.assert(jsv.forall(m, mTest.rightId));
     });
 
 });

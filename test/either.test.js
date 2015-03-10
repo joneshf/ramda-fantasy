@@ -42,6 +42,7 @@ describe('Either', function() {
     var env = {Either: EitherArb};
     var appF = 'Either string (nat -> nat)';
     var appN = 'Either string nat';
+    var f = 'nat -> Either string nat';
 
     it('has an arbitrary', function() {
         var arb = jsv.forall(e, function(e) {
@@ -52,7 +53,7 @@ describe('Either', function() {
     });
 
     it('is a Functor', function() {
-        var fTest = types.functor;
+        var fTest = types.functor(R.eqDeep);
 
         jsv.assert(jsv.forall(e, fTest.iface));
         jsv.assert(jsv.forall(e, fTest.id));
@@ -60,14 +61,14 @@ describe('Either', function() {
     });
 
     it('is an Apply', function() {
-        var aTest = types.apply;
+        var aTest = types.apply(R.eqDeep);
 
         jsv.assert(jsv.forall(e, aTest.iface));
         jsv.assert(jsv.forall(appF, appF, appN, env, aTest.compose));
     });
 
     it('is an Applicative', function() {
-        var aTest = types.applicative;
+        var aTest = types.applicative(R.eqDeep);
 
         jsv.assert(jsv.forall(e, aTest.iface));
         jsv.assert(jsv.forall(appN, appN, env, aTest.id));
@@ -76,17 +77,18 @@ describe('Either', function() {
     });
 
     it('is a Chain', function() {
-        var cTest = types.chain;
-        var f = 'nat -> Either string nat'
+        var cTest = types.chain(R.eqDeep);
 
         jsv.assert(jsv.forall(e, cTest.iface));
         jsv.assert(jsv.forall(e, f, f, env, cTest.associative));
     });
 
     it('is a Monad', function() {
-        var mTest = types.monad;
+        var mTest = types.monad(R.eqDeep);
 
         jsv.assert(jsv.forall(e, mTest.iface));
+        jsv.assert(jsv.forall(e, f, 'nat', env, mTest.leftId));
+        jsv.assert(jsv.forall(e, mTest.rightId));
     });
 
 });

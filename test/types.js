@@ -1,3 +1,5 @@
+var R = require('ramda');
+
 var interfaces = {
     functor:        ['map'],
     apply:          ['map', 'ap'],
@@ -18,58 +20,64 @@ function identity(x) { return x; }
 
 module.exports = {
 
-    functor: {
-        iface: correctInterface('functor'),
-        id: function(obj) {
-            return obj.equals(obj.map(identity));
-        },
-        compose: function(obj, f, g) {
-            return obj.map(function(x) { return f(g(x)); }).equals(
-                obj.map(g).map(f)
-            );
-        }
+    functor: function(eq) {
+        return {
+            iface: correctInterface('functor'),
+            id: function(obj) {
+                return eq(obj, obj.map(identity));
+            },
+            compose: function(obj, f, g) {
+                return eq(obj.map(R.compose(f, g)), obj.map(g).map(f));
+            }
+        };
     },
 
-    apply: {
-        iface: correctInterface('apply'),
-        compose: function(a, u, v) {
-            return a.ap(u.ap(v)).equals(
-                a.map(function(f) {
-                    return function(g) {
-                        return function(x) {
-                            return f(g(x));
-                        };
-                    };
-                }).ap(u).ap(v)
-            );
-        }
+    apply: function(eq) {
+        return {
+            iface: correctInterface('apply'),
+            compose: function(a, u, v) {
+                var curry2 = R.curryN(2);
+                return eq(a.ap(u.ap(v)), a.map(curry2(R.compose)).ap(u).ap(v));
+            }
+        };
     },
 
-    applicative: {
-        iface: correctInterface('applicative'),
-        id: function(obj, obj2) {
-            return obj.of(identity).ap(obj2).equals(obj2);
-        },
-        homomorphic: function(obj, f, x) {
-            return obj.of(f).ap(obj.of(x)).equals(obj.of(f(x)));
-        },
-        interchange: function(obj1, obj2, x) {
-            return obj2.ap(obj1.of(x)).equals(
-                obj1.of(function(f) { return f(x); }).ap(obj2)
-            );
-        }
+    applicative: function(eq) {
+        return {
+            iface: correctInterface('applicative'),
+            id: function(obj, obj2) {
+                return eq(obj.of(identity).ap(obj2), obj2);
+            },
+            homomorphic: function(obj, f, x) {
+                return eq(obj.of(f).ap(obj.of(x)), obj.of(f(x)));
+            },
+            interchange: function(obj1, obj2, x) {
+                var ylppa = R.flip(R.apply);
+                return eq(obj2.ap(obj1.of(x)), obj1.of(ylppa([x])).ap(obj2));
+            }
+        };
     },
 
-    chain: {
-        iface: correctInterface('chain'),
-        associative: function(obj, f, g) {
-            return obj.chain(f).chain(g).equals(
-                obj.chain(function(x) { return f(x).chain(g); })
-            );
-        }
+    chain: function(eq) {
+        return {
+            iface: correctInterface('chain'),
+            associative: function(obj, f, g) {
+                var x = obj.chain(f).chain(g);
+                var y = obj.chain(R.pipe(f, R.invoker(1, 'chain', g)));
+                return eq(x, y);
+            }
+        };
     },
 
-    monad: {
-        iface: correctInterface('monad')
+    monad: function(eq) {
+        return {
+            iface: correctInterface('monad'),
+            leftId: function(obj, f, x) {
+                return eq(obj.of(x).chain(f), f(x));
+            },
+            rightId: function(obj) {
+                return eq(obj.chain(obj.of), obj);
+            }
+        };
     }
 };

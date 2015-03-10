@@ -10,7 +10,7 @@ Future.prototype.equals = function(b) {
       assert.equal(v1, v2);
     }, function() {
       assert.fail(null, e1, 'Futures not equal: f1 failed, f2 did not', '===');
-    })
+    });
   }, function(v1) {
     b.fork(function() {
       assert.fail(null, v1, 'Futures not equal: f1 succeeded, f2 did not', '===');
@@ -30,7 +30,7 @@ describe('Future', function() {
     });
 
     it('is a Functor', function() {
-        var fTest = types.functor;
+        var fTest = types.functor(R.eqDeep);
         var f = Future.of(2);
         assert.equal(true, fTest.iface(f));
         assert.equal(true, fTest.id(f));
@@ -38,7 +38,7 @@ describe('Future', function() {
     });
 
     it('is an Apply', function() {
-        var aTest = types.apply;
+        var aTest = types.apply(R.eqDeep);
         var appA = Future.of(R.multiply(10));
         var appU = Future.of(R.add(5));
         var appV = Future.of(10);
@@ -47,7 +47,7 @@ describe('Future', function() {
     });
 
     it('is an Applicative', function() {
-        var aTest = types.applicative;
+        var aTest = types.applicative(R.eqDeep);
         var app1 = Future.of(101);
         var app2 = Future.of(-123);
         var appF = Future.of(R.multiply(3));
@@ -59,7 +59,7 @@ describe('Future', function() {
     });
 
     it('is a Chain', function() {
-        var cTest = types.chain;
+        var cTest = types.chain(R.eqDeep);
         var f = Future.of(2);
         var f1 = function(x) {return Future.of((3 * x));};
         var f2 = function(x) {return Future.of((5 + x));};
@@ -69,9 +69,12 @@ describe('Future', function() {
     });
 
     it('is a Monad', function() {
-        var mTest = types.monad;
+        var mTest = types.monad(R.eqDeep);
         var f = Future.of(null);
+        var f1 = function(x) {return Future.of((3 * x));};
         assert.equal(true, mTest.iface(f));
+        assert.equal(true, mTest.leftId(f, f1, 12));
+        assert.equal(true, mTest.rightId(f));
     });
 
     it('.map should work according to the functor specification', function() {

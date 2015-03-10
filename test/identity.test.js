@@ -22,14 +22,15 @@ var IdentityArb = function(a) {
         generator: IdentityGen(a),
         show: IdentityShow(a),
         shrink: IdentityShrink(a)
-    }
-}
+    };
+};
 
 describe('Identity', function() {
     var i = IdentityArb(jsv.nat);
     var env = {Identity: IdentityArb};
     var appF = 'Identity (nat -> nat)';
     var appN = 'Identity nat';
+    var f = 'nat -> Identity nat';
 
     it('has an arbitrary', function() {
         var arb = jsv.forall(i, function(i) {
@@ -40,7 +41,7 @@ describe('Identity', function() {
     });
 
     it('is a Functor', function() {
-        var fTest = types.functor;
+        var fTest = types.functor(R.eqDeep);
 
         jsv.assert(jsv.forall(i, fTest.iface));
         jsv.assert(jsv.forall(i, fTest.id));
@@ -48,14 +49,14 @@ describe('Identity', function() {
     });
 
     it('is an Apply', function() {
-        var aTest = types.apply;
+        var aTest = types.apply(R.eqDeep);
 
         jsv.assert(jsv.forall(i, aTest.iface));
         jsv.assert(jsv.forall(appF, appF, appN, env, aTest.compose));
     });
 
     it('is an Applicative', function() {
-        var aTest = types.applicative;
+        var aTest = types.applicative(R.eqDeep);
 
         jsv.assert(jsv.forall(i, aTest.iface));
         jsv.assert(jsv.forall(appN, appN, env, aTest.id));
@@ -64,17 +65,18 @@ describe('Identity', function() {
     });
 
     it('is a Chain', function() {
-        var cTest = types.chain;
-        var f = 'nat -> Identity nat'
+        var cTest = types.chain(R.eqDeep);
 
         jsv.assert(jsv.forall(i, cTest.iface));
         jsv.assert(jsv.forall(i, f, f, env, cTest.associative));
     });
 
     it('is a Monad', function() {
-        var mTest = types.monad;
+        var mTest = types.monad(R.eqDeep);
 
         jsv.assert(jsv.forall(i, mTest.iface));
+        jsv.assert(jsv.forall(i, f, 'nat', env, mTest.leftId));
+        jsv.assert(jsv.forall(i, mTest.rightId));
     });
 });
 

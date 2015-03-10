@@ -1,76 +1,81 @@
+var R = require('ramda');
 var assert = require('assert');
+var jsv = require('jsverify');
 var types = require('./types');
 
 var Reader = require('..').Reader;
 
-function add(a) {
-      return function(b) { return a + b; };
-}
+var ReaderGen = R.curry(function(a, n) {
+    return Reader(a.generator(n));
+});
 
-function always(x) {
-      return function() { return x; };
-}
+var ReaderShow = function(r) {
+    return "Reader(f)";
+};
 
-function mult(a) {
-      return function(b) { return a * b; };
-}
+var ReaderShrink = function(r) {
+    return [];
+};
 
-function identity(x) { return x; }
+var ReaderArb = function(a) {
+    return {
+        generator: ReaderGen(a),
+        show: ReaderShow,
+        shrink: jsv.shrink.bless(ReaderShrink)
+    };
+};
 
 describe('Reader properties', function() {
 
-    var f1 = function(x) { return x + '1 '; };
-    var f2 = function(x) { return x + '2 '; };
-    var f3 = function(x) { return x + '3 '; };
-    var r1 = Reader(f1);
-    var r2 = Reader(f2);
+    var fun = 'nat -> nat';
+    var r = ReaderArb(jsv.fn(jsv.nat));
+    var env = {Reader: ReaderArb};
+    var appF = 'Reader (nat -> nat -> nat)';
+    var appN = 'Reader (nat -> nat)';
+    var f = 'nat -> Reader (nat -> nat)';
+
+    var runner = R.curry(function(t, n) {
+        return types[t](function(x, y) {
+            return x.run(n) === y.run(n);
+        });
+    });
 
     it('is a Functor', function() {
-        var fTest = types.functor;
-        assert.ok(fTest.iface(r1));
-        assert.ok(fTest.id(r1));
-        assert.ok(fTest.compose(r1, f2, f3));
+        jsv.assert(jsv.forall('nat', r, fun, fun, function(n, r, f, g) {
+            var run = runner('functor', n);
+            return run.iface(r) && run.id(r) && run.compose(r, f, g);
+        }));
     });
 
     it('is an Apply', function() {
-        var aTest = types.apply;
-        var a = Reader(function() { return add(1); });
-        var b = Reader(function() { return always(2); });
-        var c = Reader(always(4));
-
-        assert.equal(true, aTest.iface(r1));
-        assert.equal(true, aTest.compose(a, b, c));
+        jsv.assert(jsv.forall('nat', r, appF, appF, appN, env,
+            function(n, r, a, u, v) {
+                var run = runner('apply', n);
+                return run.iface(r) && run.compose(a, u, v);
+            }));
     });
 
     it('is an Applicative', function() {
-        var aTest = types.applicative;
-
-        assert.equal(true, aTest.iface(r1));
-        assert.equal(true, aTest.id(Reader, r2));
-        assert.equal(true, aTest.homomorphic(r1, add(3), 46));
-        assert.equal(true, aTest.interchange(
-            Reader(function() { return mult(20); }),
-            Reader(function() { return mult(0.5); }),
-            73
-        ));
+        jsv.assert(jsv.forall('nat', r, appF, appN, appN, fun, 'nat', env,
+            function(n, r, a, u, v, f, m) {
+                var run = runner('applicative', n);
+                return run.iface(r) && run.id(u, v) &&
+                    run.homomorphic(u, f, m) && run.interchange(u, a, m);
+            }));
     });
 
     it('is a Chain', function() {
-        var cTest = types.chain;
-        var c = Reader(function() {
-            return Reader(function() {
-                return Reader(function() {
-                    return 3;
-                });
-            });
-        });
-        assert.equal(true, cTest.iface(r1));
-        assert.equal(true, cTest.associative(c, identity, identity));
+        jsv.assert(jsv.forall('nat', r, f, f, env, function(n, r, f, g) {
+            var run = runner('chain', n);
+            return run.iface(r) && run.associative(r, f, g);
+        }));
     });
 
     it('is a Monad', function() {
-        var mTest = types.monad;
-        assert.equal(true, mTest.iface(r1));
+        jsv.assert(jsv.forall('nat', r, f, 'nat', env, function(n, r, f, m) {
+            var run = runner('monad', n);
+            return run.iface(r) && run.leftId(r, f, m) && run.rightId(r);
+        }));
     });
 
 });
