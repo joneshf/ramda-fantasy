@@ -16,18 +16,18 @@ function correctInterface(type) {
     };
 }
 
-function identity(x) { return x; }
-
 module.exports = {
 
     functor: function(eq) {
         return {
             iface: correctInterface('functor'),
             id: function(obj) {
-                return eq(obj, obj.map(identity));
+                return eq(obj, obj.map(R.identity));
             },
             compose: function(obj, f, g) {
-                return eq(obj.map(R.compose(f, g)), obj.map(g).map(f));
+                var x = obj.map(function(x) { return f(g(x)); });
+                var y = obj.map(g).map(f);
+                return eq(x, y);
             }
         };
     },
@@ -36,8 +36,15 @@ module.exports = {
         return {
             iface: correctInterface('apply'),
             compose: function(a, u, v) {
-                var curry2 = R.curryN(2);
-                return eq(a.ap(u.ap(v)), a.map(curry2(R.compose)).ap(u).ap(v));
+                var x = a.ap(u.ap(v));
+                var y = a.map(function(f) {
+                    return function(g) {
+                        return function(x) {
+                            return f(g(x));
+                        };
+                    };
+                }).ap(u).ap(v);
+                return eq(x, y);
             }
         };
     },
@@ -46,14 +53,15 @@ module.exports = {
         return {
             iface: correctInterface('applicative'),
             id: function(obj, obj2) {
-                return eq(obj.of(identity).ap(obj2), obj2);
+                return eq(obj.of(R.identity).ap(obj2), obj2);
             },
             homomorphic: function(obj, f, x) {
                 return eq(obj.of(f).ap(obj.of(x)), obj.of(f(x)));
             },
             interchange: function(obj1, obj2, x) {
-                var ylppa = R.flip(R.apply);
-                return eq(obj2.ap(obj1.of(x)), obj1.of(ylppa([x])).ap(obj2));
+                var y = obj2.ap(obj1.of(x));
+                var z = obj1.of(function(f) { return f(x); }).ap(obj2);
+                return eq(y, z);
             }
         };
     },
@@ -63,7 +71,7 @@ module.exports = {
             iface: correctInterface('chain'),
             associative: function(obj, f, g) {
                 var x = obj.chain(f).chain(g);
-                var y = obj.chain(R.pipe(f, R.invoker(1, 'chain', g)));
+                var y = obj.chain(function(x) { return f(x).chain(g); });
                 return eq(x, y);
             }
         };
