@@ -43,6 +43,7 @@ describe('Either', function() {
     var appF = 'Either string (nat -> nat)';
     var appN = 'Either string nat';
     var f = 'nat -> Either string nat';
+    var g = 'nat -> nat';
 
     it('has an arbitrary', function() {
         var arb = jsv.forall(e, function(e) {
@@ -57,7 +58,7 @@ describe('Either', function() {
 
         jsv.assert(jsv.forall(e, fTest.iface));
         jsv.assert(jsv.forall(e, fTest.id));
-        jsv.assert(jsv.forall(e, 'nat -> nat', 'nat -> nat', fTest.compose));
+        jsv.assert(jsv.forall(e, g, g, fTest.compose));
     });
 
     it('is an Apply', function() {
@@ -72,7 +73,7 @@ describe('Either', function() {
 
         jsv.assert(jsv.forall(e, aTest.iface));
         jsv.assert(jsv.forall(appN, appN, env, aTest.id));
-        jsv.assert(jsv.forall(appN, 'nat -> nat', 'nat', env, aTest.homomorphic));
+        jsv.assert(jsv.forall(appN, g, 'nat', env, aTest.homomorphic));
         jsv.assert(jsv.forall(appN, appF, 'nat', env, aTest.interchange));
     });
 

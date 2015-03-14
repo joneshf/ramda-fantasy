@@ -27,12 +27,12 @@ var ReaderArb = function(a) {
 
 describe('Reader properties', function() {
 
-    var fun = 'nat -> nat';
     var r = ReaderArb(jsv.fn(jsv.nat));
     var env = {Reader: ReaderArb};
     var appF = 'Reader (nat -> nat -> nat)';
     var appN = 'Reader (nat -> nat)';
     var f = 'nat -> Reader (nat -> nat)';
+    var g = 'nat -> nat';
 
     var runner = R.curry(function(t, n) {
         return types[t](function(x, y) {
@@ -41,7 +41,7 @@ describe('Reader properties', function() {
     });
 
     it('is a Functor', function() {
-        jsv.assert(jsv.forall('nat', r, fun, fun, function(n, r, f, g) {
+        jsv.assert(jsv.forall('nat', r, g, g, function(n, r, f, g) {
             var run = runner('functor', n);
             return run.iface(r) && run.id(r) && run.compose(r, f, g);
         }));
@@ -56,7 +56,7 @@ describe('Reader properties', function() {
     });
 
     it('is an Applicative', function() {
-        jsv.assert(jsv.forall('nat', r, appF, appN, appN, fun, 'nat', env,
+        jsv.assert(jsv.forall('nat', r, appF, appN, appN, g, 'nat', env,
             function(n, r, a, u, v, f, m) {
                 var run = runner('applicative', n);
                 return run.iface(r) && run.id(u, v) &&

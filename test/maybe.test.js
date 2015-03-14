@@ -39,6 +39,7 @@ describe('Maybe', function() {
     var appF = 'Maybe (nat -> nat)';
     var appN = 'Maybe nat';
     var f = 'nat -> Maybe nat';
+    var g = 'nat -> nat';
 
     it('has an arbitrary', function() {
         var arb = jsv.forall(m, function(m) {
@@ -53,7 +54,7 @@ describe('Maybe', function() {
 
         jsv.assert(jsv.forall(m, fTest.iface));
         jsv.assert(jsv.forall(m, fTest.id));
-        jsv.assert(jsv.forall(m, 'nat -> nat', 'nat -> nat', fTest.compose));
+        jsv.assert(jsv.forall(m, g, g, fTest.compose));
     });
 
     it('is an Apply', function() {
@@ -68,7 +69,7 @@ describe('Maybe', function() {
 
         jsv.assert(jsv.forall(m, aTest.iface));
         jsv.assert(jsv.forall(appN, appN, env, aTest.id));
-        jsv.assert(jsv.forall(appN, 'nat -> nat', 'nat', env, aTest.homomorphic));
+        jsv.assert(jsv.forall(appN, g, 'nat', env, aTest.homomorphic));
         jsv.assert(jsv.forall(appN, appF, 'nat', env, aTest.interchange));
     });
 

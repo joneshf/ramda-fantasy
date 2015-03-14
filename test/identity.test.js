@@ -31,6 +31,7 @@ describe('Identity', function() {
     var appF = 'Identity (nat -> nat)';
     var appN = 'Identity nat';
     var f = 'nat -> Identity nat';
+    var g = 'nat -> nat';
 
     it('has an arbitrary', function() {
         var arb = jsv.forall(i, function(i) {
@@ -45,7 +46,7 @@ describe('Identity', function() {
 
         jsv.assert(jsv.forall(i, fTest.iface));
         jsv.assert(jsv.forall(i, fTest.id));
-        jsv.assert(jsv.forall(i, 'nat -> nat', 'nat -> nat', fTest.compose));
+        jsv.assert(jsv.forall(i, g, g, fTest.compose));
     });
 
     it('is an Apply', function() {
@@ -60,7 +61,7 @@ describe('Identity', function() {
 
         jsv.assert(jsv.forall(i, aTest.iface));
         jsv.assert(jsv.forall(appN, appN, env, aTest.id));
-        jsv.assert(jsv.forall(appN, 'nat -> nat', 'nat', env, aTest.homomorphic));
+        jsv.assert(jsv.forall(appN, g, 'nat', env, aTest.homomorphic));
         jsv.assert(jsv.forall(appN, appF, 'nat', env, aTest.interchange));
     });
 
